@@ -1056,83 +1056,66 @@
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 
 <script>
-  // Konfigurasi Firebase Anda
+  // Konfigurasi Firebase resmi untuk proyek tv-info-simeulue Anda
   const firebaseConfig = {
-    apiKey: "API_KEY_ANDA",
-    authDomain: "PROJECT_ID.firebaseapp.com",
-    databaseURL: "https://PROJECT_ID-default-rtdb.firebaseio.com",
-    projectId: "PROJECT_ID",
-    storageBucket: "PROJECT_ID.appspot.com",
-    messagingSenderId: "SENDER_ID",
-    appId: "APP_ID"
+    apiKey: "API_KEY_ANDA", // Silakan ganti dengan Web API Key dari Project Settings di Firebase Console Anda
+    authDomain: "tv-info-simeulue.firebaseapp.com",
+    databaseURL: "https://tv-info-simeulue-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "tv-info-simeulue",
+    storageBucket: "tv-info-simeulue.appspot.com",
+    messagingSenderId: "568012569944",
+    appId: "APP_ID_ANDA" // Silakan ganti dengan App ID dari Project Settings Anda
   };
 
   // Inisialisasi Firebase
   firebase.initializeApp(firebaseConfig);
   const db = firebase.database();
 
-  // 1. Listen Pengaturan Realtime
+  // 1. Sinkronisasi Pengaturan Realtime (Running Text & Nama Instansi)
   db.ref('settings').on('value', (snapshot) => {
     const data = snapshot.val();
     if (data) {
       if (data.running_text) {
-        const marqueeEl = document.querySelector('.animate-marquee');
-        if (marqueeEl) marqueeEl.textContent = data.running_text;
+        appConfig.runningText = data.running_text;
+        document.getElementById('displayRunningText').innerText = data.running_text;
+        if (document.getElementById('inputRunningText')) {
+          document.getElementById('inputRunningText').value = data.running_text;
+        }
       }
-      if (data.bg_music_url) {
-        const audioEl = document.getElementById('backgroundMusic');
-        if (audioEl && audioEl.src !== data.bg_music_url) {
-          audioEl.src = data.bg_music_url;
+      if (data.agency_name) {
+        appConfig.agencyName = data.agency_name;
+        document.getElementById('displayAgencyName').innerText = data.agency_name;
+        if (document.getElementById('inputAgencyName')) {
+          document.getElementById('inputAgencyName').value = data.agency_name;
         }
       }
     }
   });
 
-  // 2. Listen Data Slide Realtime
-  let slideList = [];
-  let currentSlideIndex = 0;
-
+  // 2. Sinkronisasi Slide Realtime sesuai Aturan Validasi Database Anda
   db.ref('slides').on('value', (snapshot) => {
     const slidesData = snapshot.val();
-    slideList = [];
+    const slideList = [];
     if (slidesData) {
       Object.keys(slidesData).forEach(key => {
-        if (slidesData[key].active) {
-          slideList.push(slidesData[key]);
+        const slide = slidesData[key];
+        if (slide.active) {
+          slideList.push({
+            id: key,
+            title: slide.title,
+            description: slide.description || '',
+            imageUrl: slide.image_url,
+            active: slide.active
+          });
         }
       });
-      // Sort berdasarkan urutan/order
-      slideList.sort((a, b) => (a.order || 0) - (b.order || 0));
-      if (slideList.length > 0 && currentSlideIndex === 0) {
-        updateDisplaySlide(slideList[0]);
+      
+      if (slideList.length > 0) {
+        appConfig.slides = slideList;
+        updateTVDisplay();
       }
     }
   });
-
-  // Fungsi pembaru tampilan slide
-  function updateDisplaySlide(slide) {
-    if (!slide) return;
-    const titleEl = document.getElementById('slideTitle');
-    const descEl = document.getElementById('slideDescription');
-    const imgContainer = document.getElementById('slideImageContainer');
-
-    if (titleEl) titleEl.textContent = slide.title || '';
-    if (descEl) descEl.textContent = slide.description || '';
-    if (imgContainer) {
-      imgContainer.style.backgroundImage = `url('${slide.image_url}')`;
-      imgContainer.style.backgroundSize = 'cover';
-      imgContainer.style.backgroundPosition = 'center';
-    }
-  }
-
-  // Auto-play Rotasi Slide
-  setInterval(() => {
-    if (slideList.length > 0) {
-      currentSlideIndex = (currentSlideIndex + 1) % slideList.length;
-      updateDisplaySlide(slideList[currentSlideIndex]);
-    }
-  }, 10000); // Berganti setiap 10 detik
 </script>
-
 </body>
 </html>
